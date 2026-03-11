@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="PcfWorkspace" constructor="AccountPickerControl" version="1.0.0" display-name-key="AccountPicker" description-key="Account picker control" control-type="standard">
+    <external-service-usage enabled="false">
+    </external-service-usage>
+    <property name="selectedAccountId" display-name-key="Selected Account" description-key="The selected account ID" of-type="SingleLine.Text" usage="bound" required="false" />
+    <property name="filter" display-name-key="Filter" description-key="OData filter expression" of-type="SingleLine.Text" usage="input" required="false" />
+    <resources>
+      <code path="out/bundle.js" order="1"/>
+    </resources>
+  </control>
+</manifest>

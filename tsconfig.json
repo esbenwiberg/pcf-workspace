@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/dataverse" },
+    { "path": "./packages/pcf-context" },
+    { "path": "./packages/hooks" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/test-utils" },
+    { "path": "./apps/sample-app" }
+  ]
+}

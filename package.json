@@ -1,0 +1,58 @@
+{
+  "name": "pcf-workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "storybook dev -p 6006",
+    "build": "pnpm -r build",
+    "build:pcf": "pnpm --filter './pcf/*' build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:mock": "playwright test --project=storybook",
+    "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "storybook:build": "storybook build",
+    "new:app": "node ./tooling/scaffold-app.mjs",
+    "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e:mock"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^3.2.0",
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.0",
+    "@storybook/addon-essentials": "^8.5.0",
+    "@storybook/addon-interactions": "^8.5.0",
+    "@storybook/react": "^8.5.0",
+    "@storybook/react-vite": "^8.5.0",
+    "@storybook/test": "^8.5.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/powerapps-component-framework": "^1.3.18",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
+    "jsdom": "^25.0.0",
+    "msw": "^2.7.0",
+    "prettier": "^3.4.0",
+    "storybook": "^8.5.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.56.0",
+    "@fluentui/react-icons": "^2.0.258",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

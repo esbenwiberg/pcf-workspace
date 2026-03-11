@@ -1,0 +1,42 @@
+export const mockAccounts = [
+  {
+    accountid: '00000000-0000-0000-0001-000000000001',
+    name: 'Contoso Ltd',
+    emailaddress1: 'info@contoso.com',
+    revenue: 5000000,
+    statuscode: 1,
+    address1_city: 'Seattle',
+  },
+  {
+    accountid: '00000000-0000-0000-0001-000000000002',
+    name: 'Fabrikam Inc',
+    emailaddress1: 'hello@fabrikam.com',
+    revenue: 3200000,
+    statuscode: 1,
+    address1_city: 'Portland',
+  },
+  {
+    accountid: '00000000-0000-0000-0001-000000000003',
+    name: 'Adventure Works',
+    emailaddress1: 'contact@adventureworks.com',
+    revenue: 1800000,
+    statuscode: 1,
+    address1_city: 'San Francisco',
+  },
+  {
+    accountid: '00000000-0000-0000-0001-000000000004',
+    name: 'Northwind Traders',
+    emailaddress1: 'sales@northwind.com',
+    revenue: 950000,
+    statuscode: 2,
+    address1_city: 'Chicago',
+  },
+  {
+    accountid: '00000000-0000-0000-0001-000000000005',
+    name: 'Tailspin Toys',
+    emailaddress1: 'support@tailspintoys.com',
+    revenue: 2100000,
+    statuscode: 1,
+    address1_city: 'Denver',
+  },
+];

@@ -1,0 +1,25 @@
+{
+  "name": "@workspace/sample-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/ui": "workspace:*",
+    "@workspace/dataverse": "workspace:*",
+    "@workspace/hooks": "workspace:*",
+    "@fluentui/react-components": "^9.56.0",
+    "@fluentui/react-icons": "^2.0.258",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@workspace/test-utils": "workspace:*",
+    "@workspace/pcf-context": "workspace:*",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.0"
+  }
+}
