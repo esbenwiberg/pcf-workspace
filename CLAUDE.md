@@ -13,18 +13,23 @@
 4. **Fluent UI 9 only.** No Fluent UI 8, no custom CSS frameworks.
 5. **Stories required.** Every app must have Storybook stories with appropriate decorators.
 
+## Environment Notes
+
+- `pnpm` is not globally installed. Use `npx pnpm` instead (e.g. `npx pnpm typecheck`).
+- `NODE_ENV` may default to `production` — prefix commands with `NODE_ENV=development` when dev dependencies are needed (e.g. install).
+
 ## Before Making Changes
 
 ```bash
-pnpm typecheck    # Must pass
-pnpm test         # Must pass
+npx pnpm typecheck    # Must pass
+npx pnpm test         # Must pass
 ```
 
 ## After Making Changes
 
 ```bash
-pnpm typecheck && pnpm test    # Minimum bar
-pnpm validate                  # Full pipeline for UI changes
+npx pnpm typecheck && npx pnpm test    # Minimum bar
+npx pnpm validate                      # Full pipeline for UI changes
 ```
 
 ## File Conventions
