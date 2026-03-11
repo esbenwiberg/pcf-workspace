@@ -17,6 +17,52 @@
 
 - `pnpm` is not globally installed. Use `npx pnpm` instead (e.g. `npx pnpm typecheck`).
 - `NODE_ENV` may default to `production` — prefix commands with `NODE_ENV=development` when dev dependencies are needed (e.g. install).
+- Playwright/Chromium won't execute in sandboxed environments (EACCES). Skip `test:e2e` and use the validate MCP for visual validation instead.
+
+## Self-Validation (validate MCP)
+
+Use this exact sequence to visually validate Storybook via the validate MCP:
+
+### 1. Install deps & build Storybook
+```bash
+NODE_ENV=development npx pnpm install --force <<< "Y"
+npx storybook build    # outputs to storybook-static/
+```
+
+### 2. Fix `serve` clean URLs (one-time, regenerate after each build)
+Storybook needs `iframe.html` to resolve literally. `serve` strips `.html` by default, breaking it.
+But `cleanUrls: false` also disables `index.html` auto-resolve, so add a rewrite:
+```bash
+cat > storybook-static/serve.json << 'EOF'
+{
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" }
+  ]
+}
+EOF
+```
+
+### 3. Start the validation server
+```
+validate_start(
+  start: "npx serve storybook-static -l ${PORT:-3000} --no-clipboard",
+  mode: "serve",
+  health: "/"
+)
+```
+
+### 4. Browse stories via iframe URL
+Use `validate_browse` with the iframe URL pattern — the main Storybook UI shell won't render previews correctly when served statically through a proxy:
+```
+validate_browse(url: "http://localhost:<PORT>/iframe.html?id=<story-id>&viewMode=story")
+```
+
+Story ID format: `apps-<componentname>--<storyname>` (lowercase, hyphens).
+Examples:
+- `apps-accountpicker--default`
+- `apps-accountpicker--with-selection`
+- `apps-accountpicker--disabled`
 
 ## Before Making Changes
 
