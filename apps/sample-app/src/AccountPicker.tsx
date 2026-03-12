@@ -57,7 +57,7 @@ function AccountPickerInner({
     [queryFilter],
   );
 
-  const accounts = data?.entities ?? [];
+  const accounts = useMemo(() => data?.entities ?? [], [data?.entities]);
 
   // Resolve selected account name on initial load
   useEffect(() => {

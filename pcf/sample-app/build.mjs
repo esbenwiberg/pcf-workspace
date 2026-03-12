@@ -34,6 +34,7 @@ const buildOptions = {
   bundle: true,
   outfile: './out/bundle.js',
   format: 'iife',
+  globalName: 'PcfWorkspace',
   target: ['es2020'],
   minify: process.env.NODE_ENV === 'production',
   sourcemap: process.env.NODE_ENV !== 'production',
