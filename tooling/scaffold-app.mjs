@@ -27,7 +27,10 @@ if (fs.existsSync(appDir)) {
   process.exit(1);
 }
 
-// Create app
+// ---------------------------------------------------------------------------
+// App scaffold
+// ---------------------------------------------------------------------------
+
 fs.mkdirSync(path.join(appDir, 'src'), { recursive: true });
 
 fs.writeFileSync(
@@ -120,7 +123,80 @@ export type { ${pascalName}Props } from './types';
 `,
 );
 
-// Create PCF shell
+// Stories
+fs.writeFileSync(
+  path.join(appDir, 'src', `${pascalName}.stories.tsx`),
+  `import type { Meta, StoryObj } from '@storybook/react';
+import { MockDataverseClient } from '@workspace/dataverse';
+import { ${pascalName} } from './${pascalName}';
+
+const mockClient = new MockDataverseClient();
+
+const meta = {
+  title: 'Apps/${pascalName}',
+  component: ${pascalName},
+  tags: ['autodocs'],
+  args: {
+    dataverseClient: mockClient,
+  },
+  argTypes: {
+    dataverseClient: { table: { disable: true } },
+    disabled: { control: 'boolean' },
+  },
+} satisfies Meta<typeof ${pascalName}>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/** Default state */
+export const Default: Story = {};
+
+/** Disabled state */
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+  },
+};
+`,
+);
+
+// Tests
+fs.writeFileSync(
+  path.join(appDir, 'src', `${pascalName}.test.tsx`),
+  `import { describe, it, expect } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '@workspace/test-utils';
+import { MockDataverseClient } from '@workspace/dataverse';
+import { ${pascalName} } from './${pascalName}';
+
+function setup(overrides: Record<string, unknown> = {}) {
+  const client = new MockDataverseClient();
+
+  return renderWithProviders(
+    <${pascalName} dataverseClient={client} {...overrides} />,
+  );
+}
+
+describe('${pascalName}', () => {
+  it('renders', async () => {
+    setup();
+    await waitFor(() => {
+      expect(screen.getByText('${pascalName} — replace this with your implementation')).toBeInTheDocument();
+    });
+  });
+
+  it('respects disabled prop', async () => {
+    setup({ disabled: true });
+    // Add assertions once the component has interactive elements
+  });
+});
+`,
+);
+
+// ---------------------------------------------------------------------------
+// PCF shell scaffold
+// ---------------------------------------------------------------------------
+
 fs.mkdirSync(path.join(pcfDir, `${pascalName}Control`), { recursive: true });
 
 fs.writeFileSync(
@@ -131,7 +207,31 @@ fs.writeFileSync(
       version: '1.0.0',
       private: true,
       scripts: { build: 'node build.mjs' },
+      dependencies: {
+        [`@workspace/${name}`]: 'workspace:*',
+        '@workspace/dataverse': 'workspace:*',
+        '@fluentui/react-components': '^9.56.0',
+        react: '^19.0.0',
+        'react-dom': '^19.0.0',
+      },
       devDependencies: { esbuild: '^0.24.0' },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
+  path.join(pcfDir, 'tsconfig.json'),
+  JSON.stringify(
+    {
+      extends: '../../tsconfig.base.json',
+      compilerOptions: { outDir: './out', rootDir: '.' },
+      include: [`${pascalName}Control`],
+      references: [
+        { path: `../../apps/${name}` },
+        { path: '../../packages/dataverse' },
+      ],
     },
     null,
     2,
@@ -152,15 +252,45 @@ fs.writeFileSync(
 `,
 );
 
+// build.mjs — includes workspace resolver plugin and globalName
 fs.writeFileSync(
   path.join(pcfDir, 'build.mjs'),
   `import * as esbuild from 'esbuild';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-await esbuild.build({
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, '../..');
+
+// Resolve @workspace/* packages to their TypeScript source
+const workspacePlugin = {
+  name: 'workspace-resolver',
+  setup(build) {
+    build.onResolve({ filter: /^@workspace\\// }, (args) => {
+      const pkg = args.path.replace('@workspace/', '');
+      const candidates = [
+        path.join(root, 'apps', pkg, 'src', 'index.ts'),
+        path.join(root, 'packages', pkg, 'src', 'index.ts'),
+      ];
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+          return { path: candidate };
+        }
+      }
+      return undefined;
+    });
+  },
+};
+
+const watch = process.argv.includes('--watch');
+
+const buildOptions = {
   entryPoints: ['./${pascalName}Control/index.tsx'],
   bundle: true,
   outfile: './out/bundle.js',
   format: 'iife',
+  globalName: 'PcfWorkspace',
   target: ['es2020'],
   minify: process.env.NODE_ENV === 'production',
   sourcemap: process.env.NODE_ENV !== 'production',
@@ -168,8 +298,79 @@ await esbuild.build({
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
+  plugins: [workspacePlugin],
   logLevel: 'info',
-});
+};
+
+if (watch) {
+  const ctx = await esbuild.context(buildOptions);
+  await ctx.watch();
+  console.log('Watching for changes...');
+} else {
+  await esbuild.build(buildOptions);
+}
+`,
+);
+
+// PCF control shell — the actual index.tsx
+fs.writeFileSync(
+  path.join(pcfDir, `${pascalName}Control`, 'index.tsx'),
+  `import { createRoot, type Root } from 'react-dom/client';
+import { FluentProvider, webLightTheme } from '@fluentui/react-components';
+import { ${pascalName} } from '@workspace/${name}';
+import { PcfDataverseClient } from '@workspace/dataverse';
+
+interface IInputs {
+  // Add your control properties here (must match ControlManifest.Input.xml)
+}
+
+interface IOutputs {
+  // Add your output properties here
+}
+
+export class ${pascalName}Control
+  implements ComponentFramework.StandardControl<IInputs, IOutputs>
+{
+  private root: Root | null = null;
+  private container!: HTMLDivElement;
+  private notifyOutputChanged!: () => void;
+
+  init(
+    context: ComponentFramework.Context<IInputs>,
+    notifyOutputChanged: () => void,
+    _state: ComponentFramework.Dictionary,
+    container: HTMLDivElement,
+  ): void {
+    this.container = container;
+    this.notifyOutputChanged = notifyOutputChanged;
+    this.root = createRoot(container);
+    this.render(context);
+  }
+
+  updateView(context: ComponentFramework.Context<IInputs>): void {
+    this.render(context);
+  }
+
+  private render(context: ComponentFramework.Context<IInputs>): void {
+    this.root?.render(
+      <FluentProvider theme={webLightTheme}>
+        <${pascalName}
+          disabled={context.mode.isControlDisabled}
+          dataverseClient={new PcfDataverseClient(context.webAPI)}
+        />
+      </FluentProvider>,
+    );
+  }
+
+  getOutputs(): IOutputs {
+    return {};
+  }
+
+  destroy(): void {
+    this.root?.unmount();
+    this.root = null;
+  }
+}
 `,
 );
 
@@ -177,9 +378,19 @@ console.log(`
 Created app:       apps/${name}/
 Created PCF shell: pcf/${name}/
 
+Files generated:
+  apps/${name}/src/${pascalName}.tsx          — Component
+  apps/${name}/src/types.ts                  — Props interface
+  apps/${name}/src/index.ts                  — Exports
+  apps/${name}/src/${pascalName}.stories.tsx  — Storybook stories
+  apps/${name}/src/${pascalName}.test.tsx     — Unit tests
+  pcf/${name}/${pascalName}Control/index.tsx  — PCF shell
+  pcf/${name}/build.mjs                      — esbuild config
+  pcf/${name}/ControlManifest.Input.xml      — PCF manifest
+
 Next steps:
-  1. Implement your component in apps/${name}/src/${pascalName}.tsx
-  2. Add stories in apps/${name}/src/${pascalName}.stories.tsx
-  3. Wire up the PCF shell in pcf/${name}/${pascalName}Control/index.tsx
-  4. Run: pnpm install && pnpm dev
+  1. Run: npx pnpm install
+  2. Implement your component in apps/${name}/src/${pascalName}.tsx
+  3. Add properties to pcf/${name}/ControlManifest.Input.xml and wire them in the shell
+  4. Run: npx pnpm dev
 `);
