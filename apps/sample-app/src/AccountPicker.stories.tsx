@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { MockDataverseClient } from '@workspace/dataverse';
+import type { IDataverseClient } from '@workspace/dataverse';
 import { mockAccounts } from '@workspace/test-utils';
 import { AccountPicker } from './AccountPicker';
 
@@ -13,6 +14,17 @@ const slowClient = new MockDataverseClient({
   entities: { account: mockAccounts },
   latency: 2000,
 });
+
+/** Client that throws on every call */
+const errorClient: IDataverseClient = {
+  retrieveMultiple: () => Promise.reject(new Error('Network error: Failed to fetch')),
+  retrieve: () => Promise.reject(new Error('Network error: Failed to fetch')),
+  create: () => Promise.reject(new Error('Network error: Failed to fetch')),
+  update: () => Promise.reject(new Error('Network error: Failed to fetch')),
+  delete: () => Promise.reject(new Error('Network error: Failed to fetch')),
+  getEntityMetadata: () => Promise.reject(new Error('Network error: Failed to fetch')),
+  getOptionSet: () => Promise.reject(new Error('Network error: Failed to fetch')),
+};
 
 const meta = {
   title: 'Apps/AccountPicker',
@@ -61,5 +73,12 @@ export const EmptyResults: Story = {
 export const SlowLoading: Story = {
   args: {
     dataverseClient: slowClient,
+  },
+};
+
+/** Error state — API call fails */
+export const ErrorState: Story = {
+  args: {
+    dataverseClient: errorClient,
   },
 };

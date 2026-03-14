@@ -8,8 +8,8 @@
 ## Architecture Rules (non-negotiable)
 
 1. **Apps are pure React.** No PCF imports in `apps/`. Ever.
-2. **PCF shells are thin.** <100 lines. Map `context` → props, nothing else.
-3. **Dataverse client is injected.** Apps receive `IDataverseClient` as a prop. Use `MockDataverseClient` in tests/stories, `PcfDataverseClient` only in pcf shells.
+2. **PCF and web resource shells are thin.** <100 lines. Map `context` → props, nothing else.
+3. **Dataverse client is injected.** Apps receive `IDataverseClient` as a prop. Use `MockDataverseClient` in tests/stories, `PcfDataverseClient` in pcf shells, `XrmDataverseClient` in web resource shells.
 4. **Fluent UI 9 only.** No Fluent UI 8, no custom CSS frameworks.
 5. **Stories required.** Every app must have Storybook stories with appropriate decorators.
 
@@ -88,18 +88,24 @@ npx pnpm validate                      # Full pipeline for UI changes
 | Stories | `apps/<name>/src/<Name>.stories.tsx` |
 | PCF Shell | `pcf/<name>/<Name>Control/index.tsx` |
 | PCF Manifest | `pcf/<name>/ControlManifest.Input.xml` |
+| WR Shell | `webresources/<name>/src/index.tsx` |
+| WR HTML Host | `webresources/<name>/index.html` |
+| WR Build | `webresources/<name>/build.mjs` |
 
 ## Creating New Controls
 
 ```bash
-pnpm new:app <name>    # Scaffolds app + pcf shell
+pnpm new:app <name>                        # App only
+pnpm new:app <name> --pcf                  # App + PCF shell
+pnpm new:app <name> --webresource          # App + web resource shell
+pnpm new:app <name> --pcf --webresource    # App + both shells
 ```
 
 Then: implement component → add stories → add tests → validate.
 
 ## Key Packages
 
-- `@workspace/dataverse` — `IDataverseClient` interface + mock/pcf implementations
+- `@workspace/dataverse` — `IDataverseClient` interface + mock/pcf/xrm implementations
 - `@workspace/pcf-context` — `createFormContext()` / `createDatasetContext()` for Storybook
 - `@workspace/ui` — Shared Fluent UI 9 components (`ErrorBoundary`, `LoadingSpinner`)
 - `@workspace/hooks` — `useDebounce`, `useAsync`
@@ -113,7 +119,7 @@ Then: implement component → add stories → add tests → validate.
 
 ## Common Mistakes
 
-- Importing PCF types in `apps/` — use `@workspace/pcf-context` types instead
+- Importing PCF or Xrm types in `apps/` — use `@workspace/pcf-context` types instead
 - Forgetting `FluentProvider` — the Storybook decorator handles it, but tests need `renderWithProviders`
 - Hardcoding widths — PCF controls must be responsive, use `width: 100%`
 - Skipping stories — visual validation is the primary agent feedback loop

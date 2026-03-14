@@ -6,6 +6,7 @@
     "dev": "storybook dev -p 6006",
     "build": "pnpm -r build",
     "build:pcf": "pnpm --filter './pcf/*' build",
+    "build:webresources": "pnpm --filter './webresources/*' build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test --config=e2e/playwright.config.ts",

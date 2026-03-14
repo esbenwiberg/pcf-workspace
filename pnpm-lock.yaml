@@ -178,6 +178,44 @@ importers:
         version: 19.2.4(react@19.2.4)
 
   pcf/sample-app:
+    dependencies:
+      '@fluentui/react-components':
+        specifier: ^9.56.0
+        version: 9.73.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(scheduler@0.27.0)
+      '@workspace/dataverse':
+        specifier: workspace:*
+        version: link:../../packages/dataverse
+      '@workspace/sample-app':
+        specifier: workspace:*
+        version: link:../../apps/sample-app
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      esbuild:
+        specifier: ^0.24.0
+        version: 0.24.2
+
+  webresources/sample-app:
+    dependencies:
+      '@fluentui/react-components':
+        specifier: ^9.56.0
+        version: 9.73.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(scheduler@0.27.0)
+      '@workspace/dataverse':
+        specifier: workspace:*
+        version: link:../../packages/dataverse
+      '@workspace/sample-app':
+        specifier: workspace:*
+        version: link:../../apps/sample-app
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
     devDependencies:
       esbuild:
         specifier: ^0.24.0

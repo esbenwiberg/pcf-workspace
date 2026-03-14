@@ -31,12 +31,58 @@ export class MockDataverseClient implements IDataverseClient {
     query: ODataQuery,
   ): Promise<PagedResult<T>> {
     await this.delay();
-    const records = (this.entities[query.entityType] ?? []) as T[];
+    let records = (this.entities[query.entityType] ?? []) as T[];
+
+    if (query.filter) {
+      records = records.filter((r) => this.matchesFilter(r as Record<string, unknown>, query.filter!));
+    }
+
     const top = query.top ?? records.length;
     return {
       entities: records.slice(0, top),
       totalCount: records.length,
     };
+  }
+
+  /**
+   * Basic OData filter simulation. Supports:
+   * - contains(field, 'value')
+   * - field eq 'value' / field eq number
+   * - compound expressions joined with ' and '
+   */
+  private matchesFilter(record: Record<string, unknown>, filter: string): boolean {
+    const parts = filter.split(' and ');
+    return parts.every((part) => {
+      const trimmed = part.trim();
+
+      // contains(field, 'value')
+      const containsMatch = trimmed.match(/^contains\((\w+),\s*'([^']*)'\)$/i);
+      if (containsMatch) {
+        const field = containsMatch[1]!;
+        const value = containsMatch[2]!;
+        const fieldVal = String(record[field] ?? '').toLowerCase();
+        return fieldVal.includes(value.toLowerCase());
+      }
+
+      // field eq 'string'
+      const eqStringMatch = trimmed.match(/^(\w+)\s+eq\s+'([^']*)'$/i);
+      if (eqStringMatch) {
+        const field = eqStringMatch[1]!;
+        const value = eqStringMatch[2]!;
+        return String(record[field]) === value;
+      }
+
+      // field eq number
+      const eqNumMatch = trimmed.match(/^(\w+)\s+eq\s+(\d+)$/i);
+      if (eqNumMatch) {
+        const field = eqNumMatch[1]!;
+        const value = eqNumMatch[2]!;
+        return Number(record[field]) === Number(value);
+      }
+
+      // Unrecognized filter — pass through (don't silently exclude)
+      return true;
+    });
   }
 
   async retrieve<T = Record<string, unknown>>(

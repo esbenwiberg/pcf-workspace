@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./out",
+    "rootDir": "."
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../apps/sample-app" },
+    { "path": "../../packages/dataverse" }
+  ]
+}

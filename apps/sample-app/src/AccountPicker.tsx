@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Combobox,
   Option,
@@ -33,6 +33,7 @@ function AccountPickerInner({
 }: AccountPickerProps) {
   const styles = useStyles();
   const [searchText, setSearchText] = useState('');
+  const [initialized, setInitialized] = useState(false);
   const debouncedSearch = useDebounce(searchText, 300);
 
   const queryFilter = useMemo(() => {
@@ -56,7 +57,18 @@ function AccountPickerInner({
     [queryFilter],
   );
 
-  const accounts = data?.entities ?? [];
+  const accounts = useMemo(() => data?.entities ?? [], [data?.entities]);
+
+  // Resolve selected account name on initial load
+  useEffect(() => {
+    if (!initialized && selectedAccountId && accounts.length > 0) {
+      const selected = accounts.find((a) => a.accountid === selectedAccountId);
+      if (selected) {
+        setSearchText(selected.name);
+      }
+      setInitialized(true);
+    }
+  }, [initialized, selectedAccountId, accounts]);
 
   return (
     <div className={styles.root}>

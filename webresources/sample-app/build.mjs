@@ -12,7 +12,6 @@ const workspacePlugin = {
   setup(build) {
     build.onResolve({ filter: /^@workspace\// }, (args) => {
       const pkg = args.path.replace('@workspace/', '');
-      // apps/<name>/src/index.ts or packages/<name>/src/index.ts
       const candidates = [
         path.join(root, 'apps', pkg, 'src', 'index.ts'),
         path.join(root, 'packages', pkg, 'src', 'index.ts'),
@@ -30,11 +29,10 @@ const workspacePlugin = {
 const watch = process.argv.includes('--watch');
 
 const buildOptions = {
-  entryPoints: ['./AccountPickerControl/index.tsx'],
+  entryPoints: ['./src/index.tsx'],
   bundle: true,
   outfile: './out/bundle.js',
   format: 'iife',
-  globalName: 'PcfWorkspace',
   target: ['es2020'],
   minify: process.env.NODE_ENV === 'production',
   sourcemap: process.env.NODE_ENV !== 'production',
