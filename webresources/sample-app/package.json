@@ -1,0 +1,18 @@
+{
+  "name": "@workspace/wr-sample-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@workspace/sample-app": "workspace:*",
+    "@workspace/dataverse": "workspace:*",
+    "@fluentui/react-components": "^9.56.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
