@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCF Workspace — Architecture Design Doc</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #1c2129;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-2: #3fb950;
+      --accent-3: #d2a8ff;
+      --accent-4: #f78166;
+      --accent-5: #ffa657;
+      --code-bg: #0d1117;
+      --tag-bg: #1f2a37;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a1f2b 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 80px 40px 60px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent-3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .hero-tags {
+      margin-top: 24px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .hero-tags span {
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* Sections */
+    section {
+      padding: 64px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-child { border-bottom: none; }
+    section h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    section h2 .num {
+      color: var(--accent);
+      font-weight: 400;
+      margin-right: 8px;
+    }
+    section .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      margin-bottom: 32px;
+    }
+    section h3 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 32px 0 12px;
+      color: var(--accent-3);
+    }
+    section p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      max-width: 800px;
+    }
+
+    /* Diagram boxes */
+    .diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin: 24px 0;
+      overflow-x: auto;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      white-space: pre;
+    }
+    .diagram .hl { color: var(--accent); }
+    .diagram .hl2 { color: var(--accent-2); }
+    .diagram .hl3 { color: var(--accent-3); }
+    .diagram .hl4 { color: var(--accent-4); }
+    .diagram .hl5 { color: var(--accent-5); }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      margin: 16px 0 24px;
+    }
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+    }
+    .code-label {
+      display: inline-block;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 2px 10px;
+      border-radius: 6px 6px 0 0;
+      font-size: 0.75rem;
+      margin-bottom: -1px;
+      position: relative;
+      top: 1px;
+    }
+
+    /* Keywords in code */
+    .kw { color: #ff7b72; }
+    .str { color: #a5d6ff; }
+    .fn { color: #d2a8ff; }
+    .type { color: #ffa657; }
+    .cmt { color: #8b949e; font-style: italic; }
+    .prop { color: #79c0ff; }
+    .num { color: #79c0ff; }
+
+    /* Grid layouts */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .card h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0;
+    }
+    .card .icon {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .card-accent-1 { border-top: 3px solid var(--accent); }
+    .card-accent-2 { border-top: 3px solid var(--accent-2); }
+    .card-accent-3 { border-top: 3px solid var(--accent-3); }
+    .card-accent-4 { border-top: 3px solid var(--accent-4); }
+    .card-accent-5 { border-top: 3px solid var(--accent-5); }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--text);
+      font-weight: 600;
+      background: var(--surface);
+    }
+    td { color: var(--text-muted); }
+    td code {
+      background: var(--tag-bg);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--accent);
+    }
+
+    /* Flow arrows */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 24px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .flow-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      text-align: center;
+      min-width: 140px;
+    }
+    .flow-step strong {
+      display: block;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .flow-step span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .flow-arrow {
+      font-size: 1.4rem;
+      color: var(--accent);
+      padding: 0 8px;
+    }
+
+    /* Callouts */
+    .callout {
+      background: var(--surface);
+      border-left: 4px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+    .callout.green { border-left-color: var(--accent-2); }
+    .callout.purple { border-left-color: var(--accent-3); }
+    .callout.orange { border-left-color: var(--accent-5); }
+    .callout p { margin: 0; font-size: 0.9rem; }
+    .callout strong { color: var(--text); }
+
+    /* Lists */
+    ul, ol {
+      color: var(--text-muted);
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+    li { margin-bottom: 6px; font-size: 0.95rem; }
+    li strong { color: var(--text); }
+
+    /* TOC */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin: 40px auto;
+      max-width: 600px;
+    }
+    .toc h3 {
+      color: var(--text);
+      margin: 0 0 16px;
+      font-size: 1.1rem;
+    }
+    .toc ol { padding-left: 20px; }
+    .toc a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .toc a:hover { color: var(--accent-3); text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero { padding: 48px 20px 40px; }
+      .hero h1 { font-size: 2rem; }
+      .container { padding: 0 16px; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== HERO ==================== -->
+  <header class="hero">
+    <h1>PCF Workspace</h1>
+    <p>A monorepo architecture that decouples React UI development from Power Apps deployment, enabling fast iteration, proper testing, and clean separation of concerns.</p>
+    <div class="hero-tags">
+      <span>pnpm monorepo</span>
+      <span>React 18</span>
+      <span>Fluent UI 9</span>
+      <span>PCF Controls</span>
+      <span>D365 Web Resources</span>
+      <span>Storybook</span>
+      <span>Vitest</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- TOC -->
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ol>
+        <li><a href="#overview">Overview &mdash; The Big Picture</a></li>
+        <li><a href="#repo-structure">Repository Structure</a></li>
+        <li><a href="#three-layer">The Three-Layer Architecture</a></li>
+        <li><a href="#dataverse-client">The Dataverse Client Abstraction</a></li>
+        <li><a href="#shells">PCF &amp; Web Resource Shells</a></li>
+        <li><a href="#storybook">Storybook &amp; Developer Experience</a></li>
+        <li><a href="#testing">Testing Strategy</a></li>
+        <li><a href="#scaffold">Scaffolding &amp; Code Generation</a></li>
+        <li><a href="#why-good">Why This Design Is Good</a></li>
+      </ol>
+    </nav>
+
+    <!-- ==================== 1. OVERVIEW ==================== -->
+    <section id="overview">
+      <h2><span class="num">01</span> Overview</h2>
+      <p class="subtitle">The problem this architecture solves, and the philosophy behind it.</p>
+
+      <p>Building UI controls for Microsoft Power Apps (PCF components) and Dynamics 365 web resources is traditionally painful. The platform's APIs are clunky, the dev loop is slow (deploy &rarr; publish &rarr; refresh &rarr; squint at form), and testing is basically "click around in a browser and pray."</p>
+
+      <p>This workspace flips that on its head with one core principle:</p>
+
+      <div class="callout purple">
+        <p><strong>PCF is a deployment target, not a development environment.</strong></p>
+        <p>You write pure React components that know nothing about Power Apps. The PCF/web-resource layer is a thin shell that maps platform context to React props. That's it.</p>
+      </div>
+
+      <p>The result: you get modern React DX &mdash; hot reload, Storybook, Vitest, proper component isolation &mdash; while still deploying to Power Apps and Dynamics 365.</p>
+
+      <div class="diagram"><span class="hl">Developer writes</span>          <span class="hl2">Thin shell adapts</span>          <span class="hl3">Platform runs it</span>
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;    &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;    &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;   <span class="hl">Pure React App</span>   &#9474;&#9472;&#9472;&#9472;&#9654;&#9474; <span class="hl2">PCF Shell</span> (60 lines)  &#9474;&#9472;&#9472;&#9472;&#9654;&#9474;   <span class="hl3">Power Apps</span>     &#9474;
+&#9474;  Fluent UI + hooks  &#9474;    &#9474; context &#9472;&#9654; props       &#9474;    &#9474;  Model-driven app &#9474;
+&#9474;  IDataverseClient   &#9474;    &#9474; PcfDataverseClient    &#9474;    &#9474;  Canvas app       &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;    &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;    &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+        &#9474;                                                 &#9650;
+        &#9474;              &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;    &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+        &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9654;&#9474; <span class="hl5">WR Shell</span> (50 lines)   &#9474;&#9472;&#9472;&#9472;&#9654;&#9474;  <span class="hl5">D365 Web Res</span>    &#9474;
+                        &#9474; data param &#9472;&#9654; props     &#9474;    &#9474;  iframe in form   &#9474;
+                        &#9474; XrmDataverseClient     &#9474;    &#9474;  standalone page  &#9474;
+                        &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;    &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+    </section>
+
+    <!-- ==================== 2. REPO STRUCTURE ==================== -->
+    <section id="repo-structure">
+      <h2><span class="num">02</span> Repository Structure</h2>
+      <p class="subtitle">A pnpm workspace monorepo with clear boundaries.</p>
+
+      <div class="diagram">pcf-workspace/
+&#9500;&#9472;&#9472; <span class="hl">apps/</span>                  <span class="cmt"># Pure React applications (zero PCF imports)</span>
+&#9474;   &#9492;&#9472;&#9472; sample-app/           <span class="cmt"># AccountPicker &mdash; the example control</span>
+&#9474;       &#9500;&#9472;&#9472; src/
+&#9474;       &#9474;   &#9500;&#9472;&#9472; AccountPicker.tsx
+&#9474;       &#9474;   &#9500;&#9472;&#9472; AccountPicker.stories.tsx
+&#9474;       &#9474;   &#9500;&#9472;&#9472; AccountPicker.test.tsx
+&#9474;       &#9474;   &#9500;&#9472;&#9472; types.ts
+&#9474;       &#9474;   &#9492;&#9472;&#9472; index.ts
+&#9474;       &#9492;&#9472;&#9472; package.json
+&#9474;
+&#9500;&#9472;&#9472; <span class="hl2">pcf/</span>                   <span class="cmt"># PCF control shells (&lt;100 lines each)</span>
+&#9474;   &#9492;&#9472;&#9472; sample-app/
+&#9474;       &#9500;&#9472;&#9472; AccountPickerControl/
+&#9474;       &#9474;   &#9492;&#9472;&#9472; index.tsx          <span class="cmt"># context &rarr; props, that's it</span>
+&#9474;       &#9500;&#9472;&#9472; ControlManifest.Input.xml
+&#9474;       &#9492;&#9472;&#9472; build.mjs              <span class="cmt"># esbuild &rarr; IIFE bundle</span>
+&#9474;
+&#9500;&#9472;&#9472; <span class="hl5">webresources/</span>          <span class="cmt"># D365 web resource shells</span>
+&#9474;   &#9492;&#9472;&#9472; sample-app/
+&#9474;       &#9500;&#9472;&#9472; src/index.tsx          <span class="cmt"># mount point, XrmDataverseClient</span>
+&#9474;       &#9500;&#9472;&#9472; index.html             <span class="cmt"># HTML host</span>
+&#9474;       &#9492;&#9472;&#9472; build.mjs
+&#9474;
+&#9500;&#9472;&#9472; <span class="hl3">packages/</span>              <span class="cmt"># Shared libraries</span>
+&#9474;   &#9500;&#9472;&#9472; dataverse/             <span class="cmt"># IDataverseClient + 3 implementations</span>
+&#9474;   &#9500;&#9472;&#9472; pcf-context/           <span class="cmt"># Mock PCF contexts for Storybook/tests</span>
+&#9474;   &#9500;&#9472;&#9472; hooks/                 <span class="cmt"># useDebounce, useAsync</span>
+&#9474;   &#9500;&#9472;&#9472; ui/                    <span class="cmt"># ErrorBoundary, LoadingSpinner</span>
+&#9474;   &#9492;&#9472;&#9472; test-utils/            <span class="cmt"># renderWithProviders, mock fixtures</span>
+&#9474;
+&#9500;&#9472;&#9472; .storybook/                <span class="cmt"># Storybook config + PowerApps decorators</span>
+&#9500;&#9472;&#9472; tooling/                   <span class="cmt"># Scaffold generator (new app/shell creation)</span>
+&#9492;&#9472;&#9472; e2e/                       <span class="cmt"># Playwright e2e tests</span></div>
+
+      <p>The pnpm workspace config declares four package groups:</p>
+      <pre><span class="cmt"># pnpm-workspace.yaml</span>
+<span class="prop">packages</span>:
+  - <span class="str">'packages/*'</span>
+  - <span class="str">'apps/*'</span>
+  - <span class="str">'pcf/*'</span>
+  - <span class="str">'webresources/*'</span></pre>
+    </section>
+
+    <!-- ==================== 3. THREE LAYER ==================== -->
+    <section id="three-layer">
+      <h2><span class="num">03</span> The Three-Layer Architecture</h2>
+      <p class="subtitle">Each layer has exactly one job. Cross-layer imports are illegal.</p>
+
+      <div class="grid-3">
+        <div class="card card-accent-1">
+          <span class="icon">&#x1F3AF;</span>
+          <h4>Layer 1 &mdash; Apps</h4>
+          <p><strong>Pure React components.</strong> Import Fluent UI, shared hooks, and <code>IDataverseClient</code>. Never import PCF or Xrm types. Could run in any React host.</p>
+        </div>
+        <div class="card card-accent-2">
+          <span class="icon">&#x1F50C;</span>
+          <h4>Layer 2 &mdash; Shells</h4>
+          <p><strong>Thin adapters.</strong> PCF shells map <code>context.parameters</code> to props. Web resource shells parse query params. Both inject the right Dataverse client. Under 100 lines.</p>
+        </div>
+        <div class="card card-accent-3">
+          <span class="icon">&#x1F4E6;</span>
+          <h4>Layer 3 &mdash; Packages</h4>
+          <p><strong>Shared foundations.</strong> The Dataverse client abstraction, UI primitives, hooks, PCF context mocks, and test utilities. Consumed by all other layers.</p>
+        </div>
+      </div>
+
+      <h3>Dependency Flow</h3>
+      <div class="diagram"><span class="hl3">packages/dataverse</span>    <span class="hl3">packages/hooks</span>    <span class="hl3">packages/ui</span>
+        &#9650;                     &#9650;                   &#9650;
+        &#9474;                     &#9474;                   &#9474;
+        &#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+        &#9474;
+  &#9484;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474;  <span class="hl">apps/sample-app</span>  &#9474;     <span class="cmt">&larr; pure React, no platform types</span>
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+        &#9474;
+   &#9484;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+   &#9474;                        &#9474;
+&#9484;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474; <span class="hl2">pcf/shell</span>      &#9474;  &#9474; <span class="hl5">webresources/shell</span> &#9474;
+&#9474; PcfDataverse   &#9474;  &#9474; XrmDataverse        &#9474;
+&#9474; Client         &#9474;  &#9474; Client              &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+    </section>
+
+    <!-- ==================== 4. DATAVERSE CLIENT ==================== -->
+    <section id="dataverse-client">
+      <h2><span class="num">04</span> The Dataverse Client Abstraction</h2>
+      <p class="subtitle">One interface, three implementations. The linchpin of the whole architecture.</p>
+
+      <p>This is the key insight that makes everything work. Apps depend on an <em>interface</em>, not a concrete API. The right implementation gets injected depending on where the code runs.</p>
+
+      <div class="code-label">packages/dataverse/src/client.interface.ts</div>
+      <pre><span class="kw">export interface</span> <span class="type">IDataverseClient</span> {
+  <span class="fn">retrieveMultiple</span>&lt;<span class="type">T</span>&gt;(query: <span class="type">ODataQuery</span>): <span class="type">Promise</span>&lt;<span class="type">PagedResult</span>&lt;<span class="type">T</span>&gt;&gt;;
+  <span class="fn">retrieve</span>&lt;<span class="type">T</span>&gt;(entityType: <span class="type">string</span>, id: <span class="type">string</span>, select?: <span class="type">string</span>[]): <span class="type">Promise</span>&lt;<span class="type">T</span>&gt;;
+  <span class="fn">create</span>(entityType: <span class="type">string</span>, data: <span class="type">Record</span>&lt;<span class="type">string</span>, <span class="type">unknown</span>&gt;): <span class="type">Promise</span>&lt;<span class="type">string</span>&gt;;
+  <span class="fn">update</span>(entityType: <span class="type">string</span>, id: <span class="type">string</span>, data: <span class="type">Record</span>&lt;<span class="type">string</span>, <span class="type">unknown</span>&gt;): <span class="type">Promise</span>&lt;<span class="type">void</span>&gt;;
+  <span class="fn">delete</span>(entityType: <span class="type">string</span>, id: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="type">void</span>&gt;;
+  <span class="fn">getEntityMetadata</span>(entityType: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="type">EntityMetadata</span>&gt;;
+  <span class="fn">getOptionSet</span>(entityType: <span class="type">string</span>, attribute: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="type">OptionSetValue</span>[]&gt;;
+}</pre>
+
+      <h3>Three Implementations</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Implementation</th>
+            <th>Wraps</th>
+            <th>Used In</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>MockDataverseClient</code></td>
+            <td>In-memory store with OData filter simulation</td>
+            <td>Storybook stories, unit tests</td>
+          </tr>
+          <tr>
+            <td><code>PcfDataverseClient</code></td>
+            <td><code>context.webAPI</code> (PCF framework)</td>
+            <td>PCF control shells</td>
+          </tr>
+          <tr>
+            <td><code>XrmDataverseClient</code></td>
+            <td><code>Xrm.WebApi</code> (D365 global)</td>
+            <td>Web resource shells</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout green">
+        <p><strong>Why this matters:</strong> The app component is written <em>once</em>. The same <code>AccountPicker</code> renders in Storybook with mock data, in a PCF control on a Power Apps form, and inside a D365 web resource iframe. Zero conditional logic, zero platform checks inside the component.</p>
+      </div>
+
+      <h3>MockDataverseClient &mdash; More Than a Stub</h3>
+      <p>The mock client isn't a dumb pass-through. It simulates real OData behavior:</p>
+      <ul>
+        <li><strong>Filter parsing</strong> &mdash; Supports <code>contains(field, 'value')</code>, <code>field eq 'value'</code>, compound <code>and</code> expressions</li>
+        <li><strong>Latency simulation</strong> &mdash; Configurable delay to test loading states</li>
+        <li><strong>CRUD operations</strong> &mdash; Create/update/delete mutate the in-memory store</li>
+        <li><strong>Seeding</strong> &mdash; <code>.seed()</code> and <code>.reset()</code> for test setup/teardown</li>
+      </ul>
+    </section>
+
+    <!-- ==================== 5. SHELLS ==================== -->
+    <section id="shells">
+      <h2><span class="num">05</span> PCF &amp; Web Resource Shells</h2>
+      <p class="subtitle">Thin adapters that translate platform APIs to React props.</p>
+
+      <div class="grid-2">
+        <div>
+          <h3>PCF Shell Pattern</h3>
+          <div class="code-label">pcf/sample-app/AccountPickerControl/index.tsx</div>
+          <pre><span class="kw">export class</span> <span class="type">AccountPickerControl</span>
+  <span class="kw">implements</span> <span class="type">ComponentFramework.StandardControl</span>&lt;<span class="type">IInputs</span>, <span class="type">IOutputs</span>&gt; {
+
+  <span class="fn">init</span>(context, notifyOutputChanged, _state, container) {
+    <span class="kw">this</span>.root = <span class="fn">createRoot</span>(container);
+    <span class="kw">this</span>.<span class="fn">render</span>(context);
+  }
+
+  <span class="kw">private</span> <span class="fn">render</span>(context) {
+    <span class="kw">this</span>.root.<span class="fn">render</span>(
+      &lt;<span class="type">FluentProvider</span>&gt;
+        &lt;<span class="type">AccountPicker</span>
+          <span class="cmt">// Map PCF context &rarr; React props</span>
+          <span class="prop">selectedAccountId</span>={context.parameters.selectedAccountId?.raw}
+          <span class="prop">disabled</span>={context.mode.isControlDisabled}
+          <span class="prop">dataverseClient</span>={<span class="kw">new</span> <span class="fn">PcfDataverseClient</span>(context.webAPI)}
+          <span class="prop">onAccountSelected</span>={(id) =&gt; {
+            <span class="kw">this</span>.currentValue = id;
+            <span class="kw">this</span>.<span class="fn">notifyOutputChanged</span>();
+          }}
+        /&gt;
+      &lt;/<span class="type">FluentProvider</span>&gt;
+    );
+  }
+
+  <span class="fn">getOutputs</span>() {
+    <span class="kw">return</span> { selectedAccountId: <span class="kw">this</span>.currentValue };
+  }
+}</pre>
+          <p>That's the <strong>entire</strong> PCF shell. 66 lines. All it does is:</p>
+          <ol>
+            <li>Mount React into the PCF container</li>
+            <li>Map <code>context.parameters</code> &rarr; props</li>
+            <li>Inject <code>PcfDataverseClient</code></li>
+            <li>Pipe callbacks back to <code>notifyOutputChanged</code></li>
+          </ol>
+        </div>
+        <div>
+          <h3>Web Resource Shell Pattern</h3>
+          <div class="code-label">webresources/sample-app/src/index.tsx</div>
+          <pre><span class="cmt">// Parse D365's "data" query parameter</span>
+<span class="kw">const</span> config = <span class="fn">parseDataParam</span>();
+<span class="kw">const</span> client = <span class="kw">new</span> <span class="fn">XrmDataverseClient</span>();
+
+<span class="kw">const</span> root = <span class="fn">createRoot</span>(
+  document.<span class="fn">getElementById</span>(<span class="str">'root'</span>)
+);
+
+root.<span class="fn">render</span>(
+  &lt;<span class="type">FluentProvider</span> <span class="prop">theme</span>={webLightTheme}&gt;
+    &lt;<span class="type">AccountPicker</span>
+      <span class="prop">selectedAccountId</span>={config.selectedAccountId}
+      <span class="prop">filter</span>={config.filter}
+      <span class="prop">dataverseClient</span>={client}
+      <span class="prop">onAccountSelected</span>={(id) =&gt; {
+        <span class="cmt">// Notify parent frame</span>
+        window.parent?.<span class="fn">postMessage</span>(
+          { type: <span class="str">'webresource:accountSelected'</span>,
+            accountId: id },
+          <span class="str">'*'</span>
+        );
+      }}
+    /&gt;
+  &lt;/<span class="type">FluentProvider</span>&gt;
+);</pre>
+          <p>Same idea, different platform glue:</p>
+          <ol>
+            <li>Parse D365 <code>data</code> query param (JSON or URL-encoded)</li>
+            <li>Inject <code>XrmDataverseClient</code> (resolves <code>Xrm.WebApi</code>)</li>
+            <li>Mount the <strong>exact same component</strong></li>
+            <li>Use <code>postMessage</code> for iframe communication</li>
+          </ol>
+        </div>
+      </div>
+
+      <h3>Build Pipeline</h3>
+      <p>Both shell types use <strong>esbuild</strong> to produce a single IIFE bundle. A custom <code>workspacePlugin</code> resolves <code>@workspace/*</code> imports to TypeScript source files, so no pre-compilation step is needed for packages.</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <strong>TypeScript Source</strong>
+          <span>apps/ + packages/</span>
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">
+          <strong>esbuild + Plugin</strong>
+          <span>Resolve @workspace/*</span>
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">
+          <strong>bundle.js (IIFE)</strong>
+          <span>Single file, deployable</span>
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">
+          <strong>Power Apps / D365</strong>
+          <span>Upload &amp; publish</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 6. STORYBOOK ==================== -->
+    <section id="storybook">
+      <h2><span class="num">06</span> Storybook &amp; Developer Experience</h2>
+      <p class="subtitle">Storybook IS the development environment. Not an afterthought.</p>
+
+      <p>Since apps are pure React, Storybook becomes the primary dev loop. Custom decorators simulate the Power Apps host environment so components behave realistically without deploying anything.</p>
+
+      <h3>Custom Decorators</h3>
+      <div class="grid-3">
+        <div class="card card-accent-1">
+          <h4>withPowerAppsShell</h4>
+          <p>Wraps components in the same DOM nesting Power Apps uses (<code>.pa-form &rarr; .pa-section &rarr; .pa-cell &rarr; .customControl</code>). Toolbar toggles between form, view, canvas, and bare modes. Also controls width.</p>
+        </div>
+        <div class="card card-accent-2">
+          <h4>withFormContext</h4>
+          <p>Provides a mock PCF form context via React context. Components can access parameters, mode, formatting, navigation &mdash; all without a real PCF runtime.</p>
+        </div>
+        <div class="card card-accent-3">
+          <h4>withDatasetContext</h4>
+          <p>Provides a mock PCF dataset context with records, columns, paging, sorting, and filtering. For dataset-type controls.</p>
+        </div>
+      </div>
+
+      <h3>Story Example</h3>
+      <p>Stories inject different client configurations to exercise every state:</p>
+
+      <div class="code-label">apps/sample-app/src/AccountPicker.stories.tsx</div>
+      <pre><span class="cmt">// Normal data</span>
+<span class="kw">const</span> mockClient = <span class="kw">new</span> <span class="fn">MockDataverseClient</span>({ entities: { account: mockAccounts } });
+
+<span class="cmt">// Empty state</span>
+<span class="kw">const</span> emptyClient = <span class="kw">new</span> <span class="fn">MockDataverseClient</span>();
+
+<span class="cmt">// Slow network</span>
+<span class="kw">const</span> slowClient = <span class="kw">new</span> <span class="fn">MockDataverseClient</span>({ entities: { account: mockAccounts }, latency: <span class="num">2000</span> });
+
+<span class="cmt">// Broken API</span>
+<span class="kw">const</span> errorClient: <span class="type">IDataverseClient</span> = {
+  retrieveMultiple: () =&gt; <span class="type">Promise</span>.<span class="fn">reject</span>(<span class="kw">new</span> <span class="fn">Error</span>(<span class="str">'Network error'</span>)),
+  <span class="cmt">// ...</span>
+};
+
+<span class="cmt">// Stories: Default, WithSelection, Disabled, EmptyResults, SlowLoading, ErrorState</span></pre>
+
+      <div class="callout orange">
+        <p><strong>Six stories, six states.</strong> Default, pre-selected, disabled, empty, loading, and error. Every edge case is visually testable without touching a Dataverse environment. Ship bugs? Not today.</p>
+      </div>
+    </section>
+
+    <!-- ==================== 7. TESTING ==================== -->
+    <section id="testing">
+      <h2><span class="num">07</span> Testing Strategy</h2>
+      <p class="subtitle">A layered approach &mdash; fast feedback first, visual validation second.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Tool</th>
+            <th>What It Tests</th>
+            <th>Speed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Type Check</strong></td>
+            <td><code>pnpm typecheck</code></td>
+            <td>Cross-package type safety via project references</td>
+            <td>~2s</td>
+          </tr>
+          <tr>
+            <td><strong>2. Unit Tests</strong></td>
+            <td><code>pnpm test</code> (Vitest)</td>
+            <td>Component logic with MockDataverseClient + jsdom</td>
+            <td>~5s</td>
+          </tr>
+          <tr>
+            <td><strong>3. Visual / E2E</strong></td>
+            <td>Playwright + Storybook</td>
+            <td>Rendered output, interaction flows</td>
+            <td>~30s</td>
+          </tr>
+          <tr>
+            <td><strong>4. Integration</strong></td>
+            <td>Manual / pcf-dev-proxy</td>
+            <td>Real Dataverse, real PCF runtime</td>
+            <td>~60s</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The key: levels 1-3 require <strong>zero</strong> Dataverse connectivity. You can develop and validate entirely offline. The <code>MockDataverseClient</code> makes this possible by simulating real OData behavior including filtering, pagination, and error states.</p>
+
+      <div class="code-label">Test helper from packages/test-utils</div>
+      <pre><span class="cmt">// renderWithProviders wraps in FluentProvider automatically</span>
+<span class="kw">import</span> { renderWithProviders, mockAccounts } <span class="kw">from</span> <span class="str">'@workspace/test-utils'</span>;
+
+<span class="fn">it</span>(<span class="str">'renders account list'</span>, <span class="kw">async</span> () =&gt; {
+  <span class="kw">const</span> client = <span class="kw">new</span> <span class="fn">MockDataverseClient</span>({ entities: { account: mockAccounts } });
+  <span class="fn">renderWithProviders</span>(&lt;<span class="type">AccountPicker</span> <span class="prop">dataverseClient</span>={client} /&gt;);
+  <span class="cmt">// assert away...</span>
+});</pre>
+    </section>
+
+    <!-- ==================== 8. SCAFFOLD ==================== -->
+    <section id="scaffold">
+      <h2><span class="num">08</span> Scaffolding &amp; Code Generation</h2>
+      <p class="subtitle">One command to go from zero to a fully wired control.</p>
+
+      <p>The <code>tooling/scaffold-app.mjs</code> generator creates all the boilerplate with correct conventions, package references, and build configs.</p>
+
+      <div class="grid-2">
+        <div class="card card-accent-1">
+          <h4>App Only</h4>
+          <pre style="border:none;padding:12px;margin:8px 0 0">pnpm new:app my-control</pre>
+          <p style="margin-top:12px">Creates: component, types, index, stories, tests, package.json, tsconfig.json</p>
+        </div>
+        <div class="card card-accent-2">
+          <h4>App + PCF Shell</h4>
+          <pre style="border:none;padding:12px;margin:8px 0 0">pnpm new:app my-control --pcf</pre>
+          <p style="margin-top:12px">Also creates: PCF shell, ControlManifest.Input.xml, esbuild config</p>
+        </div>
+        <div class="card card-accent-5">
+          <h4>App + Web Resource</h4>
+          <pre style="border:none;padding:12px;margin:8px 0 0">pnpm new:app my-control --webresource</pre>
+          <p style="margin-top:12px">Also creates: WR shell, index.html host, esbuild config</p>
+        </div>
+        <div class="card card-accent-3">
+          <h4>Full Stack</h4>
+          <pre style="border:none;padding:12px;margin:8px 0 0">pnpm new:app my-control --pcf --webresource</pre>
+          <p style="margin-top:12px">The whole enchilada. App + both deployment shells, ready to go.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 9. WHY GOOD ==================== -->
+    <section id="why-good">
+      <h2><span class="num">09</span> Why This Design Is Good</h2>
+      <p class="subtitle">It's not clever for the sake of it. Every decision solves a real pain point.</p>
+
+      <div class="grid-2">
+        <div class="card card-accent-2">
+          <span class="icon">&#x26A1;</span>
+          <h4>10x Faster Dev Loop</h4>
+          <p>Traditional PCF dev: edit &rarr; build &rarr; deploy &rarr; publish &rarr; refresh form &rarr; navigate to field &rarr; see result. This workspace: edit &rarr; Storybook hot reloads. The feedback cycle drops from <strong>minutes to milliseconds</strong>.</p>
+        </div>
+        <div class="card card-accent-1">
+          <span class="icon">&#x1F9EA;</span>
+          <h4>Actually Testable</h4>
+          <p>PCF components are notoriously hard to test because they depend on the <code>ComponentFramework</code> runtime. By moving all logic to pure React, everything is testable with standard tools (Vitest, Testing Library, Playwright). The <code>MockDataverseClient</code> eliminates the need for a live Dataverse instance.</p>
+        </div>
+        <div class="card card-accent-3">
+          <span class="icon">&#x1F504;</span>
+          <h4>Write Once, Deploy Anywhere</h4>
+          <p>The same <code>AccountPicker</code> component runs as a PCF control <em>and</em> a web resource without a single line of conditional code. Need a third deployment target? Write a 50-line shell. The app doesn't change.</p>
+        </div>
+        <div class="card card-accent-4">
+          <span class="icon">&#x1F6E1;</span>
+          <h4>Enforced Boundaries</h4>
+          <p>The monorepo structure makes it <strong>physically impossible</strong> for apps to depend on PCF types. TypeScript project references enforce the dependency graph at compile time. Violations fail the build, not the code review.</p>
+        </div>
+        <div class="card card-accent-5">
+          <span class="icon">&#x1F3D7;</span>
+          <h4>Low Ceremony Scaling</h4>
+          <p>Adding a new control is one command: <code>pnpm new:app foo --pcf</code>. The scaffold tool generates everything with correct conventions. No copy-paste, no missed configuration, no "oh wait, I forgot the build config." Teams scale without the bus factor.</p>
+        </div>
+        <div class="card card-accent-2">
+          <span class="icon">&#x1F527;</span>
+          <h4>Dependency Injection Done Right</h4>
+          <p>The <code>IDataverseClient</code> interface is a textbook application of the Dependency Inversion Principle. High-level modules (apps) don't depend on low-level modules (PCF/Xrm APIs). Both depend on abstractions. This isn't academic &mdash; it's what makes the whole test and multi-target story work.</p>
+        </div>
+      </div>
+
+      <h3>The Alternative (and Why It Sucks)</h3>
+      <p>Without this architecture, a typical PCF project looks like:</p>
+      <ul>
+        <li>Business logic tangled with <code>context.parameters</code> and <code>notifyOutputChanged</code></li>
+        <li>No Storybook because the component can't render outside PCF</li>
+        <li>No unit tests because everything needs the framework runtime</li>
+        <li>Every new control is a copy-paste-modify of the last one</li>
+        <li>Web resource versions require rewriting the component from scratch</li>
+        <li>Dev cycle measured in minutes, not milliseconds</li>
+      </ul>
+
+      <div class="callout">
+        <p><strong>The bottom line:</strong> This architecture treats the Power Apps platform as a <em>delivery mechanism</em>, not a <em>development framework</em>. Your components are portable, testable, and fast to iterate on. The platform-specific code is confined to 50-100 line adapters that are trivial to write, review, and maintain.</p>
+      </div>
+
+      <h3>Trade-offs &mdash; Nothing Is Free</h3>
+      <p>In the interest of honesty, here's what you're paying for this setup:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Trade-off</th>
+            <th>Mitigation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Initial setup complexity (monorepo tooling, workspace config, esbuild plugins)</td>
+            <td>One-time cost, amortized across all controls. Scaffold tool eliminates ongoing friction.</td>
+          </tr>
+          <tr>
+            <td>Extra abstraction layer (IDataverseClient) to maintain</td>
+            <td>The interface is small and stable. Dataverse's CRUD API rarely changes.</td>
+          </tr>
+          <tr>
+            <td>Mock client may diverge from real API behavior</td>
+            <td>Integration test layer (Level 4) catches this. Mock covers 90% of dev-time needs.</td>
+          </tr>
+          <tr>
+            <td>Bundle size slightly larger (Fluent UI + React in every control)</td>
+            <td>PCF controls are loaded per-form, not globally. A few hundred KB is fine for enterprise.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer style="text-align:center; padding:48px 32px; border-top:1px solid var(--border); color:var(--text-muted); font-size:0.85rem;">
+    PCF Workspace Architecture Doc &mdash; Generated March 2026
+  </footer>
+
+</body>
+</html>
